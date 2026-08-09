@@ -19,6 +19,32 @@ export default function OwnerMenuPage() {
     description: '',
     image: '',
   })
+  const [uploading, setUploading] = useState(false)
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+
+    setUploading(true)
+    const data = new FormData()
+    data.append('image', file)
+
+    try {
+      const res = await api.post('/uploads/image', data, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      })
+      if (res.data?.data?.url) {
+        setFormData((prev) => ({ ...prev, image: res.data.data.url }))
+      }
+    } catch (err) {
+      console.error('Failed to upload image:', err)
+      alert('Failed to upload image. Please try again.')
+    } finally {
+      setUploading(false)
+    }
+  }
 
   useEffect(() => {
     fetchMenu()
@@ -226,14 +252,44 @@ export default function OwnerMenuPage() {
                 </div>
               </div>
 
-              <div>
-                <label className="label">Image URL</label>
-                <input
-                  type="url"
-                  className="input"
-                  value={formData.image}
-                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                />
+              <div className="space-y-2">
+                <label className="label">Dish Image</label>
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-2">
+                    <label className="btn-secondary text-xs py-1.5 px-3 cursor-pointer">
+                      {uploading ? 'Uploading...' : 'Choose File'}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleFileUpload}
+                        disabled={uploading}
+                      />
+                    </label>
+                    <span className="text-xs text-stone-500">or enter URL below</span>
+                  </div>
+                  <input
+                    type="url"
+                    className="input"
+                    placeholder="Image URL"
+                    value={formData.image}
+                    onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                    disabled={uploading}
+                  />
+                  {formData.image && (
+                    <div className="relative w-20 h-20 rounded-lg overflow-hidden border border-stone-200 mt-1">
+                      <img src={formData.image} alt="Preview" className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, image: '' })}
+                        className="absolute top-0 right-0 bg-red-500 text-white rounded-bl-lg p-0.5 hover:bg-red-600 transition-colors"
+                        title="Remove image"
+                      >
+                        <XCircleIcon className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div>
