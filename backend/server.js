@@ -15,11 +15,20 @@ initSocket(server);
 // Connect to MongoDB then start server
 const startServer = async () => {
   try {
-    const mongoUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/foodexpress';
+    const mongoUri = process.env.MONGODB_URI;
+    const isProduction = process.env.NODE_ENV === 'production';
+
+    if (!mongoUri && isProduction) {
+      throw new Error('MONGODB_URI environment variable is required in production.');
+    }
+
     try {
-      await mongoose.connect(mongoUri);
-      console.log('✅ MongoDB connected to Cloud Cluster');
+      await mongoose.connect(mongoUri || 'mongodb://127.0.0.1:27017/foodexpress');
+      console.log('✅ Connected to MongoDB database');
     } catch (dbErr) {
+      if (isProduction) {
+        throw new Error(`Cloud MongoDB connection failed: ${dbErr.message}`);
+      }
       console.warn('⚠️ Cloud MongoDB connection notice:', dbErr.message);
       console.log('🔄 Connecting to fallback database...');
       await mongoose.connect('mongodb://127.0.0.1:27017/foodexpress');
