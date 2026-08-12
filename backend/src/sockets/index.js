@@ -10,7 +10,12 @@ let io;
 const initSocket = (httpServer) => {
   io = new Server(httpServer, {
     cors: {
-      origin: process.env.CLIENT_URL,
+      origin: [
+        'http://localhost:5173',
+        'http://127.0.0.1:5173',
+        'https://food-express-henna-two.vercel.app',
+        process.env.CLIENT_URL,
+      ].filter(Boolean),
       methods: ['GET', 'POST'],
       credentials: true,
     },
