@@ -1,9 +1,17 @@
 import axios from 'axios'
 import { useAuthStore } from '../stores/authStore'
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL
-  ? `${import.meta.env.VITE_API_BASE_URL}/api/v1`
-  : '/api/v1'
+const getBaseUrl = () => {
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return `${import.meta.env.VITE_API_BASE_URL}/api/v1`
+  }
+  if (typeof window !== 'undefined' && (window.location.hostname.includes('vercel.app') || window.location.hostname.includes('food-express-henna-two'))) {
+    return 'https://foodexpress-8r29.onrender.com/api/v1'
+  }
+  return '/api/v1'
+}
+
+const BASE_URL = getBaseUrl()
 
 const api = axios.create({
   baseURL: BASE_URL,
@@ -37,7 +45,13 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    const isAuthRoute = originalRequest.url?.includes('/auth/login') ||
+                        originalRequest.url?.includes('/auth/register') ||
+                        originalRequest.url?.includes('/auth/refresh') ||
+                        originalRequest.url?.includes('/auth/forgot-password') ||
+                        originalRequest.url?.includes('/auth/reset-password')
+
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthRoute) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject })

@@ -1,7 +1,17 @@
 import { create } from 'zustand'
 import { io } from 'socket.io-client'
 
-const SOCKET_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'
+const getSocketUrl = () => {
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL
+  }
+  if (typeof window !== 'undefined' && (window.location.hostname.includes('vercel.app') || window.location.hostname.includes('food-express-henna-two'))) {
+    return 'https://foodexpress-8r29.onrender.com'
+  }
+  return 'http://localhost:4000'
+}
+
+const SOCKET_URL = getSocketUrl()
 
 export const useSocketStore = create((set, get) => ({
   socket: null,
