@@ -23,6 +23,10 @@ const uploadRoutes = require('./routes/uploads');
 
 const app = express();
 
+// Trust Render/Vercel reverse proxy so req.ip is the real client IP
+// (required for accurate per-user rate limiting in production)
+app.set('trust proxy', 1);
+
 // ─── Security Middleware ───────────────────────────────────────────────────────
 app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' }
