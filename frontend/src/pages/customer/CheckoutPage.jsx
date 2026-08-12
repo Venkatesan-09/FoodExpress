@@ -4,7 +4,16 @@ import { useCartStore } from '../../stores/cartStore'
 import { useAuthStore } from '../../stores/authStore'
 import api from '../../lib/api'
 import { Spinner } from '../../components/ui'
-import { MapPinIcon, CreditCardIcon, BanknotesIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
+import { MapPinIcon, CreditCardIcon, BanknotesIcon, CheckCircleIcon, PencilSquareIcon } from '@heroicons/react/24/outline'
+
+const EMPTY_ADDRESS = {
+  line1: '',
+  city: '',
+  state: '',
+  pincode: '',
+  lat: null,
+  lng: null,
+}
 
 export default function CheckoutPage() {
   const { items, restaurantId, restaurantName, getSubtotal, getDeliveryFee, getTax, getDiscount, getTotal, clearCart } = useCartStore()
@@ -12,34 +21,64 @@ export default function CheckoutPage() {
   const navigate = useNavigate()
 
   const [paymentMethod, setPaymentMethod] = useState('card')
-  const [address, setAddress] = useState({
-    line1: '123 Tech Park Road',
-    city: 'Bengaluru',
-    state: 'Karnataka',
-    pincode: '560001',
-    lat: 12.9716,
-    lng: 77.5946,
-  })
+  const [address, setAddress] = useState(EMPTY_ADDRESS)
   const [placing, setPlacing] = useState(false)
   const [error, setError] = useState('')
+  const [addressErrors, setAddressErrors] = useState({})
 
+  // Pre-fill address from user profile if available
   useEffect(() => {
     if (!isAuthenticated) {
       navigate('/login', { state: { from: { pathname: '/checkout' } } })
-    } else if (items.length === 0) {
-      navigate('/cart')
+      return
     }
-  }, [isAuthenticated, items.length, navigate])
+    if (items.length === 0) {
+      navigate('/cart')
+      return
+    }
+    if (user?.address) {
+      setAddress({
+        line1: user.address.line1 || user.address.street || '',
+        city: user.address.city || '',
+        state: user.address.state || '',
+        pincode: user.address.pincode || user.address.zip || '',
+        lat: user.address.lat || null,
+        lng: user.address.lng || null,
+      })
+    }
+  }, [isAuthenticated, items.length, navigate, user])
 
-  if (!isAuthenticated || items.length === 0) {
-    return null
+  if (!isAuthenticated || items.length === 0) return null
+
+  const handleAddressChange = (field, value) => {
+    setAddress(prev => ({ ...prev, [field]: value }))
+    // Clear field error on change
+    if (addressErrors[field]) {
+      setAddressErrors(prev => ({ ...prev, [field]: '' }))
+    }
+  }
+
+  const validateAddress = () => {
+    const errors = {}
+    if (!address.line1.trim()) errors.line1 = 'Address is required'
+    if (!address.city.trim()) errors.city = 'City is required'
+    if (!address.state.trim()) errors.state = 'State is required'
+    if (!address.pincode.trim()) errors.pincode = 'Pincode is required'
+    else if (!/^\d{6}$/.test(address.pincode.trim())) errors.pincode = 'Enter a valid 6-digit pincode'
+    return errors
   }
 
   const handlePlaceOrder = async () => {
-    setPlacing(true)
     setError('')
+
+    const errors = validateAddress()
+    if (Object.keys(errors).length > 0) {
+      setAddressErrors(errors)
+      return
+    }
+
+    setPlacing(true)
     try {
-      // 1. Create order
       const orderPayload = {
         restaurantId,
         items: items.map(i => ({
@@ -50,7 +89,13 @@ export default function CheckoutPage() {
           price: i.price,
           restaurantId: i.restaurantId || restaurantId,
         })),
-        deliveryAddress: address,
+        deliveryAddress: {
+          line1: address.line1.trim(),
+          city: address.city.trim(),
+          state: address.state.trim(),
+          pincode: address.pincode.trim(),
+          ...(address.lat && address.lng ? { lat: address.lat, lng: address.lng } : {}),
+        },
         paymentMethod,
         billBreakdown: {
           subtotal: getSubtotal(),
@@ -64,7 +109,6 @@ export default function CheckoutPage() {
       const res = await api.post('/orders', orderPayload)
       const newOrder = res.data.data
 
-      // 2. If card or upi, simulate payment charge
       if (paymentMethod !== 'cod') {
         await api.post('/payments/mock-charge', {
           orderId: newOrder._id,
@@ -94,30 +138,70 @@ export default function CheckoutPage() {
       {/* ── Address Section ── */}
       <div className="card p-6 space-y-4">
         <h3 className="font-bold text-lg font-display flex items-center gap-2">
-          <MapPinIcon className="w-5 h-5 text-primary" /> Delivery Address
+          <MapPinIcon className="w-5 h-5 text-primary" />
+          Delivery Address
+          <span className="ml-auto flex items-center gap-1 text-xs font-normal text-primary">
+            <PencilSquareIcon className="w-4 h-4" /> Editable
+          </span>
         </h3>
+
         <div className="grid grid-cols-1 gap-3 text-sm">
+          {/* Address Line */}
           <div>
-            <label className="label">Address Line</label>
+            <label className="label">
+              Address Line <span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
-              className="input"
+              className={`input ${addressErrors.line1 ? 'border-red-400 focus:ring-red-300' : ''}`}
+              placeholder="e.g. 42, Gandhi Nagar, MG Road"
               value={address.line1}
-              onChange={(e) => setAddress({ ...address, line1: e.target.value })}
+              onChange={(e) => handleAddressChange('line1', e.target.value)}
             />
+            {addressErrors.line1 && <p className="text-red-500 text-xs mt-1">{addressErrors.line1}</p>}
           </div>
+
+          {/* City / State / Pincode */}
           <div className="grid grid-cols-3 gap-2">
             <div>
-              <label className="label">City</label>
-              <input type="text" className="input" value={address.city} readOnly />
+              <label className="label">
+                City <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                className={`input ${addressErrors.city ? 'border-red-400 focus:ring-red-300' : ''}`}
+                placeholder="e.g. Chennai"
+                value={address.city}
+                onChange={(e) => handleAddressChange('city', e.target.value)}
+              />
+              {addressErrors.city && <p className="text-red-500 text-xs mt-1">{addressErrors.city}</p>}
             </div>
             <div>
-              <label className="label">State</label>
-              <input type="text" className="input" value={address.state} readOnly />
+              <label className="label">
+                State <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                className={`input ${addressErrors.state ? 'border-red-400 focus:ring-red-300' : ''}`}
+                placeholder="e.g. Tamil Nadu"
+                value={address.state}
+                onChange={(e) => handleAddressChange('state', e.target.value)}
+              />
+              {addressErrors.state && <p className="text-red-500 text-xs mt-1">{addressErrors.state}</p>}
             </div>
             <div>
-              <label className="label">Pincode</label>
-              <input type="text" className="input" value={address.pincode} readOnly />
+              <label className="label">
+                Pincode <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                className={`input ${addressErrors.pincode ? 'border-red-400 focus:ring-red-300' : ''}`}
+                placeholder="6-digit pincode"
+                maxLength={6}
+                value={address.pincode}
+                onChange={(e) => handleAddressChange('pincode', e.target.value.replace(/\D/g, ''))}
+              />
+              {addressErrors.pincode && <p className="text-red-500 text-xs mt-1">{addressErrors.pincode}</p>}
             </div>
           </div>
         </div>
@@ -128,7 +212,7 @@ export default function CheckoutPage() {
         <h3 className="font-bold text-lg font-display flex items-center gap-2">
           <CreditCardIcon className="w-5 h-5 text-primary" /> Payment Method
         </h3>
-        
+
         <div className="grid grid-cols-3 gap-3">
           <button
             type="button"
