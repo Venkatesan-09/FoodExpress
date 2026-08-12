@@ -25,7 +25,7 @@ export const useAuthStore = create(
     }),
     {
       name: 'foodexpress-auth',
-      storage: createJSONStorage(() => sessionStorage),
+      storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({ user: state.user, accessToken: state.accessToken, isAuthenticated: state.isAuthenticated }),
     }
   )
