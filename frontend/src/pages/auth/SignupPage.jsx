@@ -72,6 +72,13 @@ export default function SignupPage() {
     }
   }
 
+  const handleNextStep = async () => {
+    const isValid = await trigger(['name', 'email', 'password', 'confirmPassword'])
+    if (isValid) {
+      setStep(2)
+    }
+  }
+
   const { mutate, isPending } = useMutation({
     mutationFn: (data) => {
       const { confirmPassword, ...payload } = data
