@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
+import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 import api from '../../lib/api'
 
@@ -14,6 +16,8 @@ const schema = z.object({
 export default function ResetPasswordPage() {
   const { token } = useParams()
   const navigate = useNavigate()
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const { register, handleSubmit, formState: { errors } } = useForm({ resolver: zodResolver(schema) })
 
   const { mutate, isPending, isSuccess } = useMutation({
@@ -44,14 +48,54 @@ export default function ResetPasswordPage() {
             <form onSubmit={handleSubmit(mutate)} noValidate className="space-y-4">
               <div>
                 <label htmlFor="new-password" className="label">New Password</label>
-                <input id="new-password" type="password" className={errors.password ? 'input-error' : 'input'}
-                  placeholder="Minimum 8 characters" {...register('password')} />
+                <div className="relative">
+                  <input
+                    id="new-password"
+                    type={showPassword ? 'text' : 'password'}
+                    className={`${errors.password ? 'input-error' : 'input'} pr-11`}
+                    placeholder="Minimum 8 characters"
+                    {...register('password')}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 focus:outline-none p-1"
+                    tabIndex={-1}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? (
+                      <EyeSlashIcon className="w-5 h-5" />
+                    ) : (
+                      <EyeIcon className="w-5 h-5" />
+                    )}
+                  </button>
+                </div>
                 {errors.password && <p className="field-error">⚠ {errors.password.message}</p>}
               </div>
               <div>
                 <label htmlFor="confirm-password" className="label">Confirm Password</label>
-                <input id="confirm-password" type="password" className={errors.confirmPassword ? 'input-error' : 'input'}
-                  placeholder="Re-enter password" {...register('confirmPassword')} />
+                <div className="relative">
+                  <input
+                    id="confirm-password"
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    className={`${errors.confirmPassword ? 'input-error' : 'input'} pr-11`}
+                    placeholder="Re-enter password"
+                    {...register('confirmPassword')}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 focus:outline-none p-1"
+                    tabIndex={-1}
+                    aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showConfirmPassword ? (
+                      <EyeSlashIcon className="w-5 h-5" />
+                    ) : (
+                      <EyeIcon className="w-5 h-5" />
+                    )}
+                  </button>
+                </div>
                 {errors.confirmPassword && <p className="field-error">⚠ {errors.confirmPassword.message}</p>}
               </div>
               <button type="submit" disabled={isPending} className="btn-primary w-full btn-lg">

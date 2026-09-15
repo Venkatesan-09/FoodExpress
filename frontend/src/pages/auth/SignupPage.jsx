@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Link, useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
+import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 import api from '../../lib/api'
 import { useAuthStore } from '../../stores/authStore'
@@ -31,6 +32,8 @@ export default function SignupPage() {
   const navigate = useNavigate()
   const { setAuth } = useAuthStore()
   const [step, setStep] = useState(1) // 1: basic info, 2: role selection
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   const { register, handleSubmit, watch, setValue, trigger, formState: { errors } } = useForm({
     resolver: zodResolver(baseSchema),
@@ -122,14 +125,54 @@ export default function SignupPage() {
                 </div>
                 <div>
                   <label htmlFor="sig-password" className="label">Password</label>
-                  <input id="sig-password" type="password" className={errors.password ? 'input-error' : 'input'}
-                    placeholder="Minimum 8 characters" {...register('password')} />
+                  <div className="relative">
+                    <input
+                      id="sig-password"
+                      type={showPassword ? 'text' : 'password'}
+                      className={`${errors.password ? 'input-error' : 'input'} pr-11`}
+                      placeholder="Minimum 8 characters"
+                      {...register('password')}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 focus:outline-none p-1"
+                      tabIndex={-1}
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showPassword ? (
+                        <EyeSlashIcon className="w-5 h-5" />
+                      ) : (
+                        <EyeIcon className="w-5 h-5" />
+                      )}
+                    </button>
+                  </div>
                   {errors.password && <p className="field-error">⚠ {errors.password.message}</p>}
                 </div>
                 <div>
                   <label htmlFor="confirmPassword" className="label">Confirm Password</label>
-                  <input id="confirmPassword" type="password" className={errors.confirmPassword ? 'input-error' : 'input'}
-                    placeholder="Re-enter password" {...register('confirmPassword')} />
+                  <div className="relative">
+                    <input
+                      id="confirmPassword"
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      className={`${errors.confirmPassword ? 'input-error' : 'input'} pr-11`}
+                      placeholder="Re-enter password"
+                      {...register('confirmPassword')}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 focus:outline-none p-1"
+                      tabIndex={-1}
+                      aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showConfirmPassword ? (
+                        <EyeSlashIcon className="w-5 h-5" />
+                      ) : (
+                        <EyeIcon className="w-5 h-5" />
+                      )}
+                    </button>
+                  </div>
                   {errors.confirmPassword && <p className="field-error">⚠ {errors.confirmPassword.message}</p>}
                 </div>
                 <button type="button" onClick={handleNextStep} className="btn-primary w-full btn-lg mt-2">

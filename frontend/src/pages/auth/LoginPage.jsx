@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
+import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 import api from '../../lib/api'
 import { useAuthStore } from '../../stores/authStore'
@@ -16,6 +18,7 @@ export default function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const { setAuth } = useAuthStore()
+  const [showPassword, setShowPassword] = useState(false)
   const from = location.state?.from?.pathname
 
   const { register, handleSubmit, formState: { errors } } = useForm({
@@ -84,8 +87,28 @@ export default function LoginPage() {
                 <label htmlFor="password" className="label !mb-0">Password</label>
                 <Link to="/forgot-password" className="text-xs text-primary hover:underline">Forgot password?</Link>
               </div>
-              <input id="password" type="password" className={errors.password ? 'input-error' : 'input'}
-                placeholder="••••••••" {...register('password')} />
+              <div className="relative">
+                <input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  className={`${errors.password ? 'input-error' : 'input'} pr-11`}
+                  placeholder="••••••••"
+                  {...register('password')}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 focus:outline-none p-1"
+                  tabIndex={-1}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? (
+                    <EyeSlashIcon className="w-5 h-5" />
+                  ) : (
+                    <EyeIcon className="w-5 h-5" />
+                  )}
+                </button>
+              </div>
               {errors.password && <p className="field-error">⚠ {errors.password.message}</p>}
             </div>
             <button type="submit" disabled={isPending} className="btn-primary w-full btn-lg mt-2">
@@ -102,15 +125,6 @@ export default function LoginPage() {
             New to FoodExpress?{' '}
             <Link to="/signup" className="text-primary font-semibold hover:underline">Create account</Link>
           </p>
-
-          {/* Demo credentials hint */}
-          <div className="mt-8 p-4 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800">
-            <p className="font-semibold mb-1">🧪 Demo Credentials</p>
-            <p>Customer: <span className="font-mono">rahul@demo.com</span> / Customer@123</p>
-            <p>Owner: <span className="font-mono">meera@demo.com</span> / Owner@123456</p>
-            <p>Partner: <span className="font-mono">ravi@demo.com</span> / Partner@123</p>
-            <p>Admin: <span className="font-mono">admin@foodexpress.demo</span> / Admin@123456</p>
-          </div>
         </div>
       </div>
     </div>

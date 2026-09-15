@@ -36,18 +36,8 @@ export default function LandingPage() {
                 Get Started <ArrowRightIcon className="w-5 h-5" />
               </Link>
               <Link to="/login" className="btn-secondary btn-lg flex items-center justify-center">
-                Explore Demo Accounts
+                Sign In
               </Link>
-            </div>
-            {/* Quick Demo Login Credentials Pill */}
-            <div className="p-4 rounded-2xl bg-white shadow-sm border border-stone-100 text-xs text-stone-600 max-w-md mx-auto lg:mx-0 text-left">
-              <div className="font-bold text-stone-800 mb-1">⚡ Quick Demo Credentials:</div>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-                <div><span className="font-semibold text-primary">Customer:</span> rahul@demo.com</div>
-                <div><span className="font-semibold text-primary">Owner:</span> meera@demo.com</div>
-                <div><span className="font-semibold text-primary">Partner:</span> ravi@demo.com</div>
-                <div><span className="font-semibold text-primary">Admin:</span> admin@foodexpress.demo</div>
-              </div>
             </div>
           </div>
           <div className="relative">
