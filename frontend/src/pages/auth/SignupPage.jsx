@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Link, useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
-import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
+import { EyeIcon, EyeSlashIcon, DocumentDuplicateIcon, ClipboardDocumentCheckIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 import api from '../../lib/api'
 import { useAuthStore } from '../../stores/authStore'
@@ -42,10 +42,33 @@ export default function SignupPage() {
 
   const selectedRole = watch('role')
 
-  const handleNextStep = async () => {
-    const isValid = await trigger(['name', 'email', 'password', 'confirmPassword'])
-    if (isValid) {
-      setStep(2)
+  const handleCopyPassword = () => {
+    const pwd = watch('password')
+    if (!pwd) {
+      toast.error('Please enter a password first')
+      return
+    }
+    navigator.clipboard.writeText(pwd).then(() => {
+      toast.success('Password copied to clipboard! 📋')
+    }).catch(() => {
+      toast.error('Failed to copy to clipboard')
+    })
+  }
+
+  const handlePasteToConfirm = () => {
+    const pwd = watch('password')
+    if (pwd) {
+      setValue('confirmPassword', pwd, { shouldValidate: true })
+      toast.success('Password matched in Confirm field! ✓')
+    } else {
+      navigator.clipboard.readText().then((text) => {
+        if (text) {
+          setValue('confirmPassword', text, { shouldValidate: true })
+          toast.success('Pasted from clipboard! ✓')
+        }
+      }).catch(() => {
+        toast.error('Please type or copy a password first')
+      })
     }
   }
 
@@ -124,7 +147,18 @@ export default function SignupPage() {
                   <input id="phone" type="tel" className="input" placeholder="9876543210" {...register('phone')} />
                 </div>
                 <div>
-                  <label htmlFor="sig-password" className="label">Password</label>
+                  <div className="flex justify-between items-center mb-1.5">
+                    <label htmlFor="sig-password" className="label !mb-0">Password</label>
+                    <button
+                      type="button"
+                      onClick={handleCopyPassword}
+                      className="text-xs text-primary hover:underline flex items-center gap-1"
+                      title="Copy password to clipboard"
+                    >
+                      <DocumentDuplicateIcon className="w-3.5 h-3.5" />
+                      Copy
+                    </button>
+                  </div>
                   <div className="relative">
                     <input
                       id="sig-password"
@@ -150,7 +184,18 @@ export default function SignupPage() {
                   {errors.password && <p className="field-error">⚠ {errors.password.message}</p>}
                 </div>
                 <div>
-                  <label htmlFor="confirmPassword" className="label">Confirm Password</label>
+                  <div className="flex justify-between items-center mb-1.5">
+                    <label htmlFor="confirmPassword" className="label !mb-0">Confirm Password</label>
+                    <button
+                      type="button"
+                      onClick={handlePasteToConfirm}
+                      className="text-xs text-primary hover:underline flex items-center gap-1"
+                      title="Paste or match password"
+                    >
+                      <ClipboardDocumentCheckIcon className="w-3.5 h-3.5" />
+                      Paste / Match
+                    </button>
+                  </div>
                   <div className="relative">
                     <input
                       id="confirmPassword"
